@@ -1,14 +1,17 @@
 package com.madeean.comicslibrary
 
 import android.content.Context
+import android.net.ConnectivityManager
 import androidx.room.Room
 import com.madeean.comicslibrary.model.api.ApiService
 import com.madeean.comicslibrary.model.api.MarvelApiRepo
+import com.madeean.comicslibrary.model.connectivity.ConnectivityMonitor
 import com.madeean.comicslibrary.model.db.CharacterDao
 import com.madeean.comicslibrary.model.db.CollectionDb
 import com.madeean.comicslibrary.model.db.CollectionDbRepo
 import com.madeean.comicslibrary.model.db.CollectionDbRepoImpl
 import com.madeean.comicslibrary.model.db.Constants.DB
+import com.madeean.comicslibrary.model.db.NoteDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,5 +33,11 @@ class HiltModule {
   fun provideCharacterDao(collectionDb: CollectionDb) = collectionDb.characterDao()
 
   @Provides
-  fun provideDbRepoImpl(characterDao: CharacterDao): CollectionDbRepo = CollectionDbRepoImpl(characterDao)
+  fun provideNoteDao(collectionDb: CollectionDb) = collectionDb.noteDao()
+
+  @Provides
+  fun provideDbRepoImpl(characterDao: CharacterDao, noteDao: NoteDao): CollectionDbRepo = CollectionDbRepoImpl(characterDao, noteDao)
+
+  @Provides
+  fun provideConnectivityManager(@ApplicationContext context: Context) = ConnectivityMonitor.getInstance(context)
 }

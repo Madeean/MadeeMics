@@ -22,13 +22,14 @@ import com.madeean.comicslibrary.view.CharacterDetailScreen
 import com.madeean.comicslibrary.view.CharactersBottomNav
 import com.madeean.comicslibrary.view.CollectionScreen
 import com.madeean.comicslibrary.view.LibraryScreen
+import com.madeean.comicslibrary.viewmodel.CollectionDbViewModel
 import com.madeean.comicslibrary.viewmodel.LibraryApiViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 sealed class Destination(val route: String) {
-  data object Library: Destination("library")
-  data object Collection: Destination("collection")
-  data object CharacterDetail: Destination("character/{characterId}") {
+  data object Library : Destination("library")
+  data object Collection : Destination("collection")
+  data object CharacterDetail : Destination("character/{characterId}") {
     fun createRoute(characterId: Int?) = "character/$characterId"
   }
 }
@@ -37,6 +38,7 @@ sealed class Destination(val route: String) {
 class MainActivity : ComponentActivity() {
 
   private val lvm by viewModels<LibraryApiViewModel>()
+  private val cvm by viewModels<CollectionDbViewModel>()
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -48,7 +50,7 @@ class MainActivity : ComponentActivity() {
           color = MaterialTheme.colorScheme.background
         ) {
           val navController = rememberNavController()
-          CharactersScaffold(navController = navController, lvm = lvm)
+          CharactersScaffold(navController = navController, lvm = lvm, cvm = cvm)
         }
       }
     }
@@ -56,28 +58,38 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun CharactersScaffold(navController: NavHostController, modifier: Modifier = Modifier, lvm: LibraryApiViewModel) {
+fun CharactersScaffold(
+  navController: NavHostController,
+  modifier: Modifier = Modifier,
+  lvm: LibraryApiViewModel,
+  cvm: CollectionDbViewModel
+) {
   val scaffoldState = rememberScaffoldState()
   val ctx = LocalContext.current
 
   androidx.compose.material.Scaffold(
     scaffoldState = scaffoldState,
-    bottomBar = { CharactersBottomNav(navController = navController)}
-  ) {paddingValues ->
+    bottomBar = { CharactersBottomNav(navController = navController) }
+  ) { paddingValues ->
     NavHost(navController = navController, startDestination = Destination.Library.route) {
       composable(Destination.Library.route) {
-        LibraryScreen(navController,lvm, paddingValues)
+        LibraryScreen(navController, lvm, paddingValues)
       }
       composable(Destination.Collection.route) {
-        CollectionScreen()
+        CollectionScreen(cvm = cvm, navController = navController)
       }
       composable(Destination.CharacterDetail.route) {
         val id = it.arguments?.getString("characterId")?.toIntOrNull()
-        if(id == null){
+        if (id == null) {
           Toast.makeText(ctx, "Character id is required", Toast.LENGTH_SHORT).show()
-        }else{
+        } else {
           lvm.retrieveSingleCharacter(id)
-          CharacterDetailScreen(lvm = lvm, paddingValues = paddingValues, navController = navController)
+          CharacterDetailScreen(
+            lvm = lvm,
+            paddingValues = paddingValues,
+            navController = navController,
+            cvm = cvm
+          )
         }
       }
     }

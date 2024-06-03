@@ -37,6 +37,7 @@ import com.madeean.comicslibrary.CharacterImage
 import com.madeean.comicslibrary.Destination
 import com.madeean.comicslibrary.model.CharactersApiResponse
 import com.madeean.comicslibrary.model.api.NetworkResult
+import com.madeean.comicslibrary.model.connectivity.ConnectivityObservable
 import com.madeean.comicslibrary.viewmodel.LibraryApiViewModel
 
 @Composable
@@ -47,6 +48,8 @@ fun LibraryScreen(
 ) {
   val result by vm.result.collectAsState()
   val text = vm.queryText.collectAsState()
+  val networkAvailable =
+    vm.networkAvailable.observe().collectAsState(ConnectivityObservable.Status.Available)
 
   Column(
     modifier = Modifier
@@ -54,6 +57,22 @@ fun LibraryScreen(
       .padding(bottom = paddingValues.calculateBottomPadding()),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
+
+    if (networkAvailable.value == ConnectivityObservable.Status.Unavailable) {
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .background(Color.Red), horizontalArrangement = Arrangement.Center
+      ) {
+        Text(
+          text = "Network unavailable",
+          fontWeight = FontWeight.Bold,
+          color = Color.White,
+          modifier = Modifier.padding(16.dp)
+        )
+      }
+    }
+
     OutlinedTextField(
       value = text.value,
       onValueChange = vm::onQueryUpdate,
@@ -130,12 +149,14 @@ fun ShowCharactersList(
             }
         ) {
           Row(modifier = Modifier.fillMaxWidth()) {
-            CharacterImage(url = imageUrl, modifier = Modifier
-              .padding(4.dp)
-              .width(100.dp))
+            CharacterImage(
+              url = imageUrl, modifier = Modifier
+                .padding(4.dp)
+                .width(100.dp)
+            )
 
             Column(modifier = Modifier.padding(4.dp)) {
-              Text(text = title?:"", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+              Text(text = title ?: "", fontWeight = FontWeight.Bold, fontSize = 20.sp)
             }
           }
 
